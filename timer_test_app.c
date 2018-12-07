@@ -7,7 +7,7 @@
 #include <fcntl.h>
 #include <asm/types.h>
 #include <sys/ioctl.h>
-#include "my_timer.h"
+#include "pwm_timer.h"
 
 
 
@@ -19,8 +19,8 @@ static uint8_t tick_duration;
 
 static void do_read(int fd)
 {
-    uint8_t buf;
-    int status;
+    uint8_t buf = 0;
+    int status = 0;
     status = read(fd, &buf, 1);
     if (status < 0) {
 	perror("read");
@@ -28,7 +28,7 @@ static void do_read(int fd)
     }
 
     printf("\n");
-    printf("read(%2d): %02x,", status, buf);
+    printf("Timer master value: %02d", buf);
     printf("\n");
 }
 
@@ -47,13 +47,15 @@ static void do_write(int fd, uint8_t message)
 
 int main(int argc, char *argv[])
 {
-    int c;
-    int fd;
-    int write_msg;
+    int c = 0;
+    int fd = 0;
+    int write_msg = 0;
     int ret = 0;
     duty_cycle = 50;
     const char *name = "/dev/TIMER_DEV";
     const char *optstring = "w:rd:t:";
+    fd = open(name, O_RDWR);
+
     while ((c = getopt(argc, argv, optstring)) != EOF) {
 
 	switch (c) {
@@ -67,30 +69,32 @@ int main(int argc, char *argv[])
 	    continue;
 	case 'd':
 	    duty_cycle = (uint8_t) (atoi(optarg));
-	    ret = ioctl(fd, DUTY_CYCLE_WR, &duty_cycle);
+	    ret = ioctl(fd, IOCTL_PWM_LED_DUTY_CYCLE_WR, &duty_cycle);
 	    if (ret == -1)
 		perror("can't set DUTY_CYCLE");
 
-	    ret = ioctl(fd, DUTY_CYCLE_RD, &duty_cycle);
+	    ret = ioctl(fd, IOCTL_PWM_LED_DUTY_CYCLE_RD, &duty_cycle);
 	    if (ret == -1)
 		perror("can't get DUTY_CYCLE");
 	    continue;
 	case 't':
 	    tick_duration = (uint8_t) (atoi(optarg));
-	    ret = ioctl(fd, TICK_DURATION_WR, &tick_duration);
+	    ret = ioctl(fd, IOCTL_TIMER_TICK_DURATION_WR, &tick_duration);
 	    if (ret == -1)
 		perror("can't set TICK_DURATION");
 
-	    ret = ioctl(fd, TICK_DURATION_RD, &tick_duration);
+	    ret = ioctl(fd, IOCTL_TIMER_TICK_DURATION_RD, &tick_duration);
 	    if (ret == -1)
 		perror("can't get TICK_DURATION");
 	    continue;
 	case '?':
 	  err:
-	    fprintf(stderr,
-		    "\nusage: %s [-w N] [-r] [-m N]\n-w: write [N: message]\n-r: read current timer value\n-d: Duty cycle change [N: percentage]\n Tick duration change [N : #ms] ",
-		    argv[0]);
-	    printf("\nDuty_cycle (default = 50) \n");
+	    printf
+		("\nusage: [-w N] [-r] [-d N] [-t N]\n -w: write [N: message]\n");
+	    printf
+		("-r: read current timer value\n-d: Duty cycle change [N: percentage] \n");
+	    printf("Tick duration change [N : #ms] \n");
+	    printf("Duty_cycle (default = 50) \n");
 	    printf("Tick duration (default = 100ms)  \n\n");
 
 	    return 1;
@@ -98,9 +102,6 @@ int main(int argc, char *argv[])
 
     }
 
-    fd = open(name, O_NONBLOCK);
-
-    //sleep(30);
     close(fd);
     return 0;
 
