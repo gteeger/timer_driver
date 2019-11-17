@@ -18,7 +18,7 @@ static int duty_cycle;
 static bool pwm_state;
 static bool button_state;
 static int up_cycles, down_cycles;
-
+static int irq_number;
 
 static void timeout(struct timer_list *t);
 static irqreturn_t irq_handler(unsigned int irq, void *dev_id,
@@ -229,6 +229,7 @@ static void __exit timer_exit(void)
     unregister_chrdev(MAJOR_NUM, "timer_dev");
     del_timer(&timer);
     gpio_free(PWM_GPIO);
+    free_irq(irq_number, NULL);
 }
 
 module_init(timer_init);
