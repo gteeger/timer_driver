@@ -228,8 +228,8 @@ static void __exit timer_exit(void)
 #endif
     unregister_chrdev(MAJOR_NUM, "timer_dev");
     del_timer(&timer);
-    gpio_free(PWM_GPIO);
     free_irq(irq_number, NULL);
+    gpio_free(PWM_GPIO);
 }
 
 module_init(timer_init);
